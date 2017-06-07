@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jack Flanagan</title>
+
+    <link rel="stylesheet" href="main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+
+  </head>
+  <body>
+
+<div class="sensitiveData">
+
+    <button onclick="signout()">Sign out</button>
+
+    <div class='section'>
+      <p style='text-decoration: underline'>Add Plate</p>
+      <div class='discover_middle'>
+        <input type='text' id='sendPlate' class='searchfield' placeholder='Plate Number' maxlength='20'/>
+      </div>
+      <div class='discover_bottom' id='discover_bottom'>
+        <input type='submit' value='Add' onclick='addPlate()'/>
+      </div>
+    </div>
+
+    <div class='section'>
+      <p style='text-decoration: underline'>Add Quarles Card Number</p>
+      <div class='discover_middle'>
+        <input type='text' id='sendCard' class='searchfield' placeholder='Quarles Card Number' maxlength='20'/>
+      </div>
+      <div class='discover_bottom' id='discover_bottom'>
+        <input type='submit' value='Add' onclick='addCard()'/>
+      </div>
+    </div>
+
+    <div class='section'>
+      <p style='text-decoration: underline'>Add Period</p>
+      <div class='discover_middle'>
+        <input type='text' id='sendPeriod' class='searchfield' placeholder='Period' maxlength='20'/>
+      </div>
+      <div class='discover_bottom' id='discover_bottom'>
+        <input type='submit' value='Add' onclick='addPeriod()'/>
+      </div>
+    </div>
+
+  </div>
+
+      <div class='break' id="login">
+        <p style='display:inline'>Username: </p><input type='text' id='loginEmail' class='formbox' placeholder='Email' maxlength='50'/>
+        <br/>
+        <br/>
+        <p style='display:inline'>Password: </p><input type='password' id='loginPassword' class='formbox' placeholder='Password' maxlength='50'/>
+        <input type='Submit' class='formbox' value='Login' onclick="login()"/>
+      </div>
+
+      <script src="https://www.gstatic.com/firebasejs/4.0.0/firebase.js"></script>
+      <script src="jquery-3.0.0.min.js"></script>
+      <script>
+
+//======================SET UP FIREBASE======================
+
+var config = {
+    apiKey: "AIzaSyD0-AH_4UqnK2-blWMrI4QFVY13c3pPIjQ",
+    authDomain: "yft-2-86aaa.firebaseapp.com",
+    databaseURL: "https://yft-2-86aaa.firebaseio.com",
+    projectId: "yft-2-86aaa",
+    storageBucket: "yft-2-86aaa.appspot.com",
+    messagingSenderId: "224550812064"
+  };
+firebase.initializeApp(config);
+
+var database = firebase.database();
+
+//======================END FIREBASE SETUP======================
+
+//======================OTHER FUNCTIONS======================
+
+function login() {
+
+  firebase.auth().signInWithEmailAndPassword($("#loginEmail").val(), $("#loginPassword").val()).catch(function(error) {
+    // Handle Errors here.
+    var errorCode = error.code;
+    var errorMessage = error.message;
+
+    console.log("=====errors=====");
+    console.log(errorCode);
+    console.log(errorMessage);
+
+    // ...
+  });
+
+}
+
+function signout() {
+  firebase.auth().signOut().then(function() {
+    location.reload()
+  }).catch(function(error) {
+    // An error happened.
+  });
+}
+
+function addPlate() {
+
+  var d = new Date();
+  var idNum = d.getTime();
+
+  var storedPlate = $('#sendPlate').val();
+  storedPlate = storedPlate.split(' ').join('_');
+
+  var id = storedPlate + idNum.toString();
+
+  firebase.database().ref('plates/' + id).set({
+    id: id,
+    plate: $('#sendPlate').val()
+  });
+
+  reloadPage();
+
+}
+
+function addCard() {
+
+  var d = new Date();
+  var idNum = d.getTime();
+
+  var storedCard = $('#sendCard').val();
+  storedCard = storedCard.split(' ').join('_');
+
+  var id = storedCard + idNum.toString();
+
+  firebase.database().ref('cards/' + id).set({
+    id: id,
+    card: $('#sendCard').val()
+  });
+
+  reloadPage();
+
+}
+
+function addPeriod() {
+
+  var d = new Date();
+  var idNum = d.getTime();
+
+  var id = idNum.toString();
+
+  firebase.database().ref('periods/' + id).set({
+    id: id,
+    period: $('#sendPeriod').val()
+  });
+
+  reloadPage();
+
+}
+
+function reloadPage() {
+  location.reload();
+}
+
+function archive(idIn) {
+
+  var periodIn = $("#archiveRecord" + idIn).val();
+
+  firebase.database().ref().child('/records/' + idIn).update({ period: periodIn }, function(error) {
+    if (error) {
+      alert("Error: " + error);
+    } else {
+      alert("Success!");
+      reloadPage();
+    }
+  });
+
+
+
+}
+
+//======================END FIREBASE FUNCTIONS======================
+
+//======================CHECKING LOGIN STATUS AND DISPLAY ACCORDINGLY======================
+
+        firebase.auth().onAuthStateChanged(function(user) {
+
+          if (user) {
+
+            $(".sensitiveData").css("display", "block");
+            $("#login").css("display", "none");
+
+            loadContent();
+
+          } else {
+
+            $(".sensitiveData").css("display", "none");
+            $("#login").css("display", "block");
+
+          }
+
+        });
+
+        var periods = [];
+
+        function loadContent() {
+
+          var breakBlock = document.createElement("div");
+          breakBlock.setAttribute("class", "break");
+
+          //======================SET VALUES FOR CARD NUMBER======================
+
+          var pickCard = document.createElement("select");
+          pickCard.setAttribute("id", "pickCard");
+          pickCard.setAttribute("style", "display:inline");
+
+          var defaultCardOption = document.createElement("option");
+          defaultCardOption.setAttribute("value", "000");
+          var defaultCardText = document.createTextNode("Quarles Card");
+          defaultCardOption.appendChild(defaultCardText);
+          pickCard.appendChild(defaultCardOption);
+
+          firebase.database().ref('cards').once('value').then(function(snapshot) {
+
+            var cards = [];
+            var items = snapshot.val();
+
+            for (var a in items) {
+              if (!items.hasOwnProperty(a)) continue;
+                var item = items[a];
+                cards.push(item);
+            }
+
+            for (var a in cards) {
+
+              var itemlink = document.createElement("a");
+
+              if (!cards.hasOwnProperty(a)) continue;
+                var card = cards[a];
+
+                var cardOption = document.createElement("option");
+                cardOption.setAttribute("value", card["card"]);
+                var cardText = document.createTextNode(card["card"]);
+                cardOption.appendChild(cardText);
+                pickCard.appendChild(cardOption);
+
+            }
+
+            breakBlock.appendChild(pickCard);
+
+          })
+
+          //======================SET VALUES FOR PERIOD======================
+
+          var pickPeriod = document.createElement("select");
+          pickPeriod.setAttribute("id", "pickPeriod");
+          pickPeriod.setAttribute("style", "display:inline");
+
+          var defaultPeriodOption = document.createElement("option");
+          defaultPeriodOption.setAttribute("value", "Other");
+          var defaultPeriodText = document.createTextNode("Period");
+          defaultPeriodOption.appendChild(defaultPeriodText);
+          pickPeriod.appendChild(defaultPeriodOption);
+
+          firebase.database().ref('periods').once('value').then(function(snapshot) {
+
+            var items = snapshot.val();
+
+            for (var a in items) {
+              if (!items.hasOwnProperty(a)) continue;
+                var item = items[a];
+                periods.push(item);
+            }
+
+            for (var a in periods) {
+
+              var itemlink = document.createElement("a");
+
+              if (!periods.hasOwnProperty(a)) continue;
+                var period = periods[a];
+
+                var periodOption = document.createElement("option");
+                periodOption.setAttribute("value", period["period"]);
+                var periodText = document.createTextNode(period["period"]);
+                periodOption.appendChild(periodText);
+                pickPeriod.appendChild(periodOption);
+
+            }
+
+            breakBlock.appendChild(pickPeriod);
+
+            var goButton = document.createElement("button");
+            goButton.setAttribute("onclick", "reloadData()");
+            var goText = document.createTextNode("Go");
+            goButton.appendChild(goText);
+
+            breakBlock.appendChild(goButton);
+
+          })
+
+          document.body.appendChild(breakBlock);
+
+        }
+
+        //================END LOAD CONTENT================
+
+        var allRecords = [];
+
+        retrieveData();
+
+        function retrieveData() {
+
+          firebase.database().ref('records').once('value').then(function(snapshot) {
+
+            items = snapshot.val();
+
+            for (var a in items) {
+              if (!items.hasOwnProperty(a)) continue;
+                var item = items[a];
+                allRecords.push(item);
+            }
+
+          })
+        }
+
+        function reloadData() {
+
+          window.location = "admin.html#" + $("#pickCard").val() + $("#pickPeriod").val();
+          // location.reload();
+
+          var removeNodes = document.getElementsByClassName('container');
+          while (removeNodes[0]) {
+              removeNodes[0].parentNode.removeChild(removeNodes[0]);
+          }
+
+          var dataString = window.location.hash.substring(1);
+
+          var selectedCard = dataString.substring(0,3);
+          var selectedPeriod = dataString.substring(3);
+
+          for (var a in allRecords) {
+
+            //======data======
+
+            var recordID = "hey";
+            var recordCard;
+            var recordPlate;
+            var recordName;
+
+            var container = document.createElement("div");
+            container.setAttribute("class", "container");
+
+            var recordLink = document.createElement("a");
+
+            var recordData = document.createElement("div");
+            recordData.setAttribute("class", "break");
+            recordData.setAttribute("style", "width:50%;float:left;font-size: 18px");
+
+            var isGood = true;
+            var periodIsSet = false;
+
+            if (!allRecords.hasOwnProperty(a)) continue;
+              var item = allRecords[a];
+
+              for (var a in item) {
+                if (!item.hasOwnProperty(a)) continue;
+
+                  if (a == "id") {
+
+                    recordLink.setAttribute("href", "record.html#" + item["id"]);
+
+                    var recordImage = document.createElement("img");
+
+                    recordID = item["id"];
+
+                    var srcURL = "https://firebasestorage.googleapis.com/v0/b/yft-2-86aaa.appspot.com/o/gasreceipts%2F" + item["id"] + "?alt=media&token=280c2bfc-5e72-4b2b-bf22-0da7de55d34b";
+
+                    recordImage.setAttribute("src", srcURL);
+                    recordImage.setAttribute("width", "40%");
+                    recordImage.setAttribute("style", "display:inline;float:left");
+                    recordLink.appendChild(recordImage);
+
+
+                  } else if (a == "name") {
+
+                    var recordDataName =  document.createElement("p");
+                    recordDataName.setAttribute("style", "display: inline");
+                    var recordDataNameText = document.createTextNode("Name: " + item[a]);
+                    recordDataName.appendChild(recordDataNameText);
+                    var break1 = document.createElement("br");
+                    var break2 = document.createElement("br");
+
+                    recordData.appendChild(recordDataName);
+                    recordData.appendChild(break1);
+                    recordData.appendChild(break2);
+
+                  } else if (a == "plate") {
+
+                    var recordDataPlate =  document.createElement("p");
+                    recordDataPlate.setAttribute("style", "display: inline");
+                    var recordDataPlateText = document.createTextNode("Name: " + item[a]);
+                    recordDataPlate.appendChild(recordDataPlateText);
+                    var break1 = document.createElement("br");
+                    var break2 = document.createElement("br");
+
+                    recordData.appendChild(recordDataPlate);
+                    recordData.appendChild(break1);
+                    recordData.appendChild(break2);
+
+                  } else if (a == "vin") {
+
+                    var recordDataVIN =  document.createElement("p");
+                    recordDataVIN.setAttribute("style", "display: inline");
+
+                    if (item[a] == selectedCard) {
+
+                      var recordDataVINText = document.createTextNode("Quarles Card: " + item[a]);
+                      recordDataVIN.appendChild(recordDataVINText);
+                      var break1 = document.createElement("br");
+                      var break2 = document.createElement("br");
+
+                      recordData.appendChild(recordDataVIN);
+                      recordData.appendChild(break1);
+                      recordData.appendChild(break2);
+
+                    } else {
+                      isGood = false;
+                    }
+
+                  } else if (a == "period") {
+
+                    periodIsSet = true;
+
+                    if (item[a] != selectedPeriod) {
+                      isGood = false;
+                    }
+
+                  }
+
+              }
+
+              var archiveSelect = document.createElement("select");
+
+              archiveSelect.setAttribute("id", "archiveRecord" + recordID);
+              archiveSelect.setAttribute("style", "display: inline");
+              var defaultOption = document.createElement("option");
+              defaultOption.setAttribute("value", "Other");
+              var periodDefaultText = document.createTextNode("All");
+              defaultOption.appendChild(periodDefaultText);
+              archiveSelect.appendChild(defaultOption);
+
+              for (a in periods) {
+
+                var p = periods[a];
+                var pName = p["period"];
+
+                var periodOption = document.createElement("option");
+                periodOption.setAttribute("value", pName);
+                var periodOptionText = document.createTextNode(pName);
+                periodOption.appendChild(periodOptionText);
+                archiveSelect.appendChild(periodOption);
+
+              }
+
+              var archiveButton = document.createElement("button");
+
+              var functionString = "archive(" + recordID + ", " + $("#archiveRecord" + recordID).val() + ")";
+              archiveButton.setAttribute("onclick", functionString);
+              var archiveButtonText = document.createTextNode("Archive");
+              archiveButton.appendChild(archiveButtonText);
+
+              if (selectedPeriod != 'Other' && !periodIsSet) {
+                isGood = false;
+              } else {
+                console.log("its good");
+              }
+
+              if (isGood) {
+
+                container.appendChild(recordLink);
+                container.appendChild(recordData);
+                container.appendChild(archiveSelect);
+                container.appendChild(archiveButton);
+
+                document.body.appendChild(container);
+
+              }
+
+          }
+
+        }
+
+      </script>
+
+    </div>
+
+  </body>
+</html>
