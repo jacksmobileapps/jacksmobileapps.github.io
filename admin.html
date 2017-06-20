@@ -34,16 +34,6 @@
       </div>
     </div>
 
-    <div class='section'>
-      <p style='text-decoration: underline'>Add Period</p>
-      <div class='discover_middle'>
-        <input type='text' id='sendPeriod' class='searchfield' placeholder='Period' maxlength='20'/>
-      </div>
-      <div class='discover_bottom' id='discover_bottom'>
-        <input type='submit' value='Add' onclick='addPeriod()'/>
-      </div>
-    </div>
-
   </div>
 
       <div class='break' id="login">
@@ -153,18 +143,28 @@ function reloadPage() {
 
 function archive(idIn) {
 
-  var periodIn = $("#archiveRecord" + idIn).val();
+  // var periodIn = $("#archiveRecord" + idIn).val();
 
-  firebase.database().ref().child('/records/' + idIn).update({ period: periodIn }, function(error) {
-    if (error) {
-      alert("Error: " + error);
-    } else {
-      alert("Success!");
-      reloadPage();
-    }
-  });
+  // firebase.database().ref().child('/records/' + idIn).update({ period: periodIn }, function(error) {
+  //   if (error) {
+  //     alert("Error: " + error);
+  //   } else {
+  //     alert("Success!");
+  //     reloadPage();
+  //   }
+  // });
 
+  $("#record" + idIn).animate({
+    opacity: 0
+  }, 500, function() {
+    $("#record" + idIn).css("display", "none")
+  })
 
+  firebase.database().ref().child('/records/' + idIn).remove();
+
+  var fileRef = firebase.storage().ref().child('gasreceipts/' + idIn);
+
+  fileRef.delete();
 
 }
 
@@ -243,7 +243,7 @@ function archive(idIn) {
 
           var pickPeriod = document.createElement("select");
           pickPeriod.setAttribute("id", "pickPeriod");
-          pickPeriod.setAttribute("style", "display:inline");
+          pickPeriod.setAttribute("style", "display:none");
 
           var defaultPeriodOption = document.createElement("option");
           defaultPeriodOption.setAttribute("value", "Other");
@@ -362,7 +362,7 @@ function archive(idIn) {
 
                     recordID = item["id"];
 
-                    var srcURL = "https://firebasestorage.googleapis.com/v0/b/yft-2-86aaa.appspot.com/o/gasreceipts%2F" + item["id"] + "?alt=media&token=280c2bfc-5e72-4b2b-bf22-0da7de55d34b";
+                    var srcURL = "https://firebasestorage.googleapis.com/v0/b/yft3-e3ac2.appspot.com/o/gasreceipts%2F" + item["id"] + "?alt=media&token=f8d05956-7b29-4f85-9f48-57a19a288ea9";
 
                     recordImage.setAttribute("src", srcURL);
                     recordImage.setAttribute("width", "40%");
@@ -428,34 +428,37 @@ function archive(idIn) {
 
               }
 
-              var archiveSelect = document.createElement("select");
 
-              archiveSelect.setAttribute("id", "archiveRecord" + recordID);
-              archiveSelect.setAttribute("style", "display: inline");
-              var defaultOption = document.createElement("option");
-              defaultOption.setAttribute("value", "Other");
-              var periodDefaultText = document.createTextNode("All");
-              defaultOption.appendChild(periodDefaultText);
-              archiveSelect.appendChild(defaultOption);
+              container.setAttribute("id", "record" + recordID);
 
-              for (a in periods) {
+              // var archiveSelect = document.createElement("select");
+              //
+              // archiveSelect.setAttribute("id", "archiveRecord" + recordID);
+              // archiveSelect.setAttribute("style", "display: inline");
+              // var defaultOption = document.createElement("option");
+              // defaultOption.setAttribute("value", "Other");
+              // var periodDefaultText = document.createTextNode("All");
+              // defaultOption.appendChild(periodDefaultText);
+              // archiveSelect.appendChild(defaultOption);
 
-                var p = periods[a];
-                var pName = p["period"];
-
-                var periodOption = document.createElement("option");
-                periodOption.setAttribute("value", pName);
-                var periodOptionText = document.createTextNode(pName);
-                periodOption.appendChild(periodOptionText);
-                archiveSelect.appendChild(periodOption);
-
-              }
+              // for (a in periods) {
+              //
+              //   var p = periods[a];
+              //   var pName = p["period"];
+              //
+              //   var periodOption = document.createElement("option");
+              //   periodOption.setAttribute("value", pName);
+              //   var periodOptionText = document.createTextNode(pName);
+              //   periodOption.appendChild(periodOptionText);
+              //   archiveSelect.appendChild(periodOption);
+              //
+              // }
 
               var archiveButton = document.createElement("button");
 
               var functionString = "archive(" + recordID + ", " + $("#archiveRecord" + recordID).val() + ")";
               archiveButton.setAttribute("onclick", functionString);
-              var archiveButtonText = document.createTextNode("Archive");
+              var archiveButtonText = document.createTextNode("Delete");
               archiveButton.appendChild(archiveButtonText);
 
               if (selectedPeriod != 'Other' && !periodIsSet) {
@@ -468,7 +471,7 @@ function archive(idIn) {
 
                 container.appendChild(recordLink);
                 container.appendChild(recordData);
-                container.appendChild(archiveSelect);
+                // container.appendChild(archiveSelect);
                 container.appendChild(archiveButton);
 
                 document.body.appendChild(container);
