@@ -67,6 +67,7 @@
 <script src="https://www.gstatic.com/firebasejs/4.0.0/firebase.js"></script>
 <script src="jquery-3.0.0.min.js"></script>
 <script src="config.js"></script>
+<script src="ImageTools.js"></script>
 <script>
 
 //======================SET UP FIREBASE======================
@@ -79,7 +80,17 @@
 
   $("#up_image").on("change", function(event) {
 
-    selectedFile = event.target.files[0];
+    var preSelectedFile = event.target.files[0];
+
+    ImageTools.resize(preSelectedFile, {
+        width: 1000, // maximum width
+        height: 1000 // maximum height
+    }, function(blob, didItResize) {
+        // didItResize will be true if it managed to resize it, otherwise false (and will return the original file as 'blob')
+        console.log(didItResize);
+        selectedFile = blob;
+        // you can also now upload this blob using an XHR.
+    });
 
   })
 
